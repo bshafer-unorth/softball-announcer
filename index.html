@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Softball Announcer</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; background: #f0f0f0; }
+    h1, h2 { text-align: center; }
+    #game, .team-section, .controls { margin-top: 20px; }
+    .player-input { margin-bottom: 10px; }
+    label { display: inline-block; width: 100px; }
+    input[type="text"], input[type="number"] { width: 150px; }
+    button { padding: 10px 15px; margin: 10px; }
+    .team-section { background: white; padding: 15px; border-radius: 10px; }
+  </style>
+</head>
+<body>
+
+  <h1>Softball Announcer</h1>
+
+  <div id="setup">
+    <div class="team-section">
+      <h2>Home Team Setup</h2>
+      <label>Team Name: <input id="homeTeamName" type="text" /></label><br><br>
+      <div id="homeRoster"></div>
+      <button onclick="addPlayer('home')">+ Add Home Player</button>
+    </div>
+
+    <div class="team-section">
+      <h2>Away Team Setup</h2>
+      <label>Team Name: <input id="awayTeamName" type="text" /></label><br><br>
+      <div id="awayRoster"></div>
+      <button onclick="addPlayer('away')">+ Add Away Player</button>
+    </div>
+
+    <button onclick="startGame()">🎮 Start Game</button>
+  </div>
+
+  <div id="game" style="display:none;">
+    <h2 id="currentTeamName"></h2>
+    <h3 id="currentBatter"></h3>
+    <div class="controls">
+      <button onclick="nextBatter()">➡️ Next Batter</button>
+      <button onclick="switchInning()">🔁 Switch Inning</button>
+    </div>
+  </div>
+
+  <audio id="audio" src=""></audio>
+
+  <script>
+    const homeTeam = { name: '', players: [], index: 0 };
+    const awayTeam = { name: '', players: [], index: 0 };
+    let isHomeBatting = false;
+
+    function addPlayer(team) {
+      const div = document.createElement('div');
+      div.className = 'player-input';
+      div.innerHTML = `
+        <label># <input type="number" class="${team}-number" /></label>
+        <label>Name: <input type="text" class="${team}-name" /></label>
+        ${team === 'home' ? '<label>MP3: <input type="file" accept="audio/mp3" class="' + team + '-mp3" /></label>' : ''}
+      `;
+      document.getElementById(team + 'Roster').appendChild(div);
+    }
+
+    function startGame() {
+      homeTeam.name = document.getElementById('homeTeamName').value;
+      awayTeam.name = document.getElementById('awayTeamName').value;
+
+      document.querySelectorAll('.home-number').forEach((el, i) => {
+        const name = document.querySelectorAll('.home-name')[i].value;
+        const mp3File = document.querySelectorAll('.home-mp3')[i].files[0];
+        let songURL = '';
+        if (mp3File) songURL = URL.createObjectURL(mp3File);
+        homeTeam.players.push({ number: el.value, name, song: songURL });
+      });
+
+      document.querySelectorAll('.away-number').forEach((el, i) => {
+        const name = document.querySelectorAll('.away-name')[i].value;
+        awayTeam.players.push({ number: el.value, name });
+      });
+
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      const team = isHomeBatting ? homeTeam : awayTeam;
+      const player = team.players[team.index % team.players.length];
+      document.getElementById('currentTeamName').textContent = `${team.name} Batting`;
+      document.getElementById('currentBatter').textContent = `#${player.number} - ${player.name}`;
+    }
+
+    function nextBatter() {
+      const team = isHomeBatting ? homeTeam : awayTeam;
+      const player = team.players[team.index % team.players.length];
+
+      // Play walk-up song if home
+      if (isHomeBatting && player.song) {
+        const audio = document.getElementById('audio');
+        audio.src = player.song;
+        audio.play();
+        setTimeout(() => announce(player), 5000); // wait 5s
+      } else {
+        announce(player);
+      }
+
+      team.index++;
+      updateDisplay();
+    }
+
+    function announce(player) {
+      const text = `Now batting, number ${player.number}, ${player.name}`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.pitch = 1;
+      utterance.rate = 1;
+      utterance.volume = 1;
+      speechSynthesis.speak(utterance);
+    }
+
+    function switchInning() {
+      isHomeBatting = !isHomeBatting;
+      updateDisplay();
+    }
+  </script>
+
+</body>
+</html>
