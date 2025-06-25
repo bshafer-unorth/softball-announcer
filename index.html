@@ -102,7 +102,7 @@ function nextBatter() {
   if (isHomeBatting && player.song) {
     const musicAudio = document.getElementById('musicAudio');
     musicAudio.src = player.song;
-    musicAudio.volume = 0.2; // 🎵 reduce volume to 20%
+    musicAudio.volume = 0.08; // 🎵 reduce volume to 8%
     musicAudio.play();
     setTimeout(() => announce(player), 5000);
   } else {
