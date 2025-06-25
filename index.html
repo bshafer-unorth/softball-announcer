@@ -122,12 +122,36 @@
     const awayTeam = { name: '', players: [], index: 0 };
     let isHomeBatting = false;
 
+    const introTemplates = [
+      "Now batting, number {#}, {Name}, playing {Position}.",
+      "Next up to bat, number {#}, {Name}, the {Position}.",
+      "Coming to the plate, number {#}, {Name}, your {Position}.",
+      "Stepping in, number {#}, {Name}, at {Position}.",
+      "Due up, number {#}, {Name}, from the {Position} position.",
+      "Taking the batter’s box, number {#}, {Name}, our {Position}.",
+      "Let’s welcome to the plate, number {#}, {Name}, covering {Position}.",
+      "Up next, number {#}, {Name}, holding down {Position}.",
+      "At bat, number {#}, {Name}, playing {Position}.",
+      "Now approaching, number {#}, {Name}, on {Position}."
+    ];
+
+    function getIntro(player, index) {
+      const template = index % player.teamLength === 0
+        ? "Leading off the inning, number {#}, {Name}, playing {Position}."
+        : introTemplates[Math.floor(Math.random() * introTemplates.length)];
+      return template
+        .replace("{#}", player.number)
+        .replace("{Name}", player.name)
+        .replace("{Position}", player.position || "the field");
+    }
+
     function addPlayer(team) {
       const div = document.createElement('div');
       div.className = 'player-input';
       div.innerHTML = `
         <label># <input type="number" class="${team}-number" /></label>
         <label>Name: <input type="text" class="${team}-name" /></label>
+        <label>Position: <input type="text" class="${team}-position" /></label>
         ${team === 'home' ? '<label>MP3: <input type="file" accept="audio/mp3" class="' + team + '-mp3" /></label>' : ''}
       `;
       document.getElementById(team + 'Roster').appendChild(div);
@@ -139,16 +163,21 @@
 
       document.querySelectorAll('.home-number').forEach((el, i) => {
         const name = document.querySelectorAll('.home-name')[i].value;
+        const position = document.querySelectorAll('.home-position')[i].value;
         const mp3File = document.querySelectorAll('.home-mp3')[i].files[0];
         let songURL = '';
         if (mp3File) songURL = URL.createObjectURL(mp3File);
-        homeTeam.players.push({ number: el.value, name, song: songURL });
+        homeTeam.players.push({ number: el.value, name, position, song: songURL });
       });
 
       document.querySelectorAll('.away-number').forEach((el, i) => {
         const name = document.querySelectorAll('.away-name')[i].value;
-        awayTeam.players.push({ number: el.value, name });
+        const position = document.querySelectorAll('.away-position')[i].value;
+        awayTeam.players.push({ number: el.value, name, position });
       });
+
+      homeTeam.players.forEach(p => p.teamLength = homeTeam.players.length);
+      awayTeam.players.forEach(p => p.teamLength = awayTeam.players.length);
 
       document.getElementById('setup').style.display = 'none';
       document.getElementById('game').style.display = 'block';
@@ -171,9 +200,9 @@
         musicAudio.src = player.song;
         musicAudio.volume = 0.08;
         musicAudio.play();
-        setTimeout(() => announce(player), 5000);
+        setTimeout(() => announce(player, team.index), 5000);
       } else {
-        announce(player);
+        announce(player, team.index);
       }
 
       team.index++;
@@ -185,9 +214,8 @@
       updateDisplay();
     }
 
-    async function announce(player) {
-      const text = `Now batting, number ${player.number}, ${player.name}.`;
-
+    async function announce(player, index) {
+      const text = getIntro(player, index);
       await announceWithElevenLabs(text);
     }
 
