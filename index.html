@@ -61,18 +61,9 @@
     button:hover {
       background: #005bb5;
     }
-    #game {
+    #game, #setup {
       text-align: center;
       margin-top: 2rem;
-    }
-    #currentTeamName {
-      font-size: 1.8rem;
-      margin-bottom: 0.5rem;
-      color: #003366;
-    }
-    #currentBatter {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
     }
     .controls button {
       margin: 0.5rem;
@@ -96,21 +87,44 @@
       max-width: 400px;
       width: 100%;
     }
-    .modal-content h3 {
-      margin-top: 0;
-    }
   </style>
 </head>
 <body>
   <header>Softball Game Announcer</header>
   <main>
-    <div id="game">
+    <div id="setup">
+      <div class="team-section">
+        <h2>Home Team</h2>
+        <input type="text" id="homeName" placeholder="Team Name" /><br>
+        <button onclick="openPlayerModal('home')">+ Add Home Player</button>
+      </div>
+      <div class="team-section">
+        <h2>Away Team</h2>
+        <input type="text" id="awayName" placeholder="Team Name" /><br>
+        <button onclick="openPlayerModal('away')">+ Add Away Player</button>
+      </div>
+      <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="game" style="display:none;">
       <h2 id="currentTeamName"></h2>
       <h3 id="currentBatter"></h3>
       <div class="controls">
         <button onclick="nextBatter()">Next Batter</button>
         <button onclick="switchInning()">Switch Inning</button>
         <button onclick="fadeOutMusic()">Fade Out Music</button>
+      </div>
+    </div>
+
+    <div class="modal" id="playerModal">
+      <div class="modal-content">
+        <h3>Add Player</h3>
+        <input type="number" id="playerNumber" placeholder="Number" /><br>
+        <input type="text" id="playerName" placeholder="Name" /><br>
+        <input type="text" id="playerPosition" placeholder="Position" /><br>
+        <input type="file" id="playerSong" accept="audio/*" /><br>
+        <button onclick="addPlayer()">Add Player</button>
+        <button onclick="closePlayerModal()">Done</button>
       </div>
     </div>
   </main>
@@ -122,6 +136,7 @@
     const homeTeam = { name: 'Home', players: [], index: 0 };
     const awayTeam = { name: 'Away', players: [], index: 0 };
     let isHomeBatting = true;
+    let currentTeamType = 'home';
 
     const introTemplates = [
       "Now batting, number {#}, {Name}, playing {Position}",
@@ -151,8 +166,8 @@
     const voiceId = 'WUv3U52IJqRNi6eaJlff';
     const apiKey = 'sk_61bc5c6b3b95e8161b5b10bf353215199baf9dbd4a90e9a0';
 
-    function announcePlayer(player, isFirstOfInning) {
-      const text = getRandomIntro(player, isFirstOfInning);
+    function announcePlayer(player, isFirst) {
+      const text = getRandomIntro(player, isFirst);
       fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
         method: 'POST',
         headers: {
@@ -177,6 +192,40 @@
         voiceAudio.volume = 1.0;
         voiceAudio.play();
       });
+    }
+
+    function openPlayerModal(team) {
+      currentTeamType = team;
+      document.getElementById('playerModal').style.display = 'flex';
+    }
+
+    function closePlayerModal() {
+      document.getElementById('playerModal').style.display = 'none';
+    }
+
+    function addPlayer() {
+      const number = document.getElementById('playerNumber').value;
+      const name = document.getElementById('playerName').value;
+      const position = document.getElementById('playerPosition').value;
+      const songInput = document.getElementById('playerSong');
+      const song = songInput.files[0] ? URL.createObjectURL(songInput.files[0]) : '';
+
+      const player = { number, name, position, song };
+      if (currentTeamType === 'home') homeTeam.players.push(player);
+      else awayTeam.players.push(player);
+
+      songInput.value = '';
+      document.getElementById('playerNumber').value = '';
+      document.getElementById('playerName').value = '';
+      document.getElementById('playerPosition').value = '';
+    }
+
+    function startGame() {
+      homeTeam.name = document.getElementById('homeName').value || 'Home';
+      awayTeam.name = document.getElementById('awayName').value || 'Away';
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
+      nextBatter();
     }
 
     function nextBatter() {
@@ -215,16 +264,6 @@
         }
       }, 50);
     }
-
-    // Mock data for testing
-    homeTeam.players = [
-      { number: 7, name: "Ava Shafer", position: "Shortstop", song: "" },
-      { number: 23, name: "Lily Carter", position: "Pitcher", song: "" }
-    ];
-    awayTeam.players = [
-      { number: 5, name: "Emma Jones", position: "Catcher" },
-      { number: 11, name: "Sophia Hill", position: "First Base" }
-    ];
   </script>
 </body>
 </html>
