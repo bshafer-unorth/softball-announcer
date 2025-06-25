@@ -104,20 +104,130 @@
 <body>
   <header>Softball Game Announcer</header>
   <main>
-    <!-- previous HTML content unchanged -->
+    <div id="setup">
+      <div class="team-section">
+        <h2>Home Team Setup</h2>
+        <label>Team Name: <input id="homeTeamName" type="text" /></label><br>
+        <button onclick="openPlayerModal('home')">Add Home Player</button>
+        <div id="homeRoster"></div>
+      </div>
+
+      <div class="team-section">
+        <h2>Away Team Setup</h2>
+        <label>Team Name: <input id="awayTeamName" type="text" /></label><br>
+        <button onclick="openPlayerModal('away')">Add Away Player</button>
+        <div id="awayRoster"></div>
+      </div>
+
+      <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="game" style="display:none;">
+      <h2 id="currentTeamName"></h2>
+      <h3 id="currentBatter"></h3>
+      <div class="controls">
+        <button onclick="nextBatter()">Next Batter</button>
+        <button onclick="switchInning()">Switch Inning</button>
+        <button onclick="fadeOutMusic()">Fade Out Music</button>
+      </div>
+    </div>
   </main>
+
+  <div id="playerModal" class="modal">
+    <div class="modal-content">
+      <h3>Add Player</h3>
+      <label>Number: <input type="number" id="modalNumber"></label><br>
+      <label>Name: <input type="text" id="modalName"></label><br>
+      <label>Position: <input type="text" id="modalPosition"></label><br>
+      <label id="modalMp3Label" style="display:none;">MP3: <input type="file" id="modalMp3" accept="audio/mp3"></label><br>
+      <button onclick="submitPlayer(true)">Add Another Player</button>
+      <button onclick="submitPlayer(false)">Done</button>
+    </div>
+  </div>
 
   <audio id="musicAudio"></audio>
   <audio id="voiceAudio"></audio>
 
   <script>
-    const homeTeam = { players: [], index: 0 };
-    const awayTeam = { players: [], index: 0 };
+    const homeTeam = { name: '', players: [], index: 0 };
+    const awayTeam = { name: '', players: [], index: 0 };
     let isHomeBatting = false;
     let currentTeam = '';
 
     const voiceId = 'WUv3U52IJqRNi6eaJlff';
-    const apiKey = 'sk_61bc5c6b3b95e8161b5b10bf353215199baf9dbd4a90e9a0';
+    const apiKey = 'sk_61bc5c6b3b95e8161b5b10bf353215199baf9dbd4a90e9a0E';
+
+    function openPlayerModal(team) {
+      currentTeam = team;
+      document.getElementById('modalMp3Label').style.display = team === 'home' ? 'block' : 'none';
+      document.getElementById('modalNumber').value = '';
+      document.getElementById('modalName').value = '';
+      document.getElementById('modalPosition').value = '';
+      document.getElementById('modalMp3').value = '';
+      document.getElementById('playerModal').style.display = 'flex';
+    }
+
+    function submitPlayer(addAnother) {
+      const number = document.getElementById('modalNumber').value;
+      const name = document.getElementById('modalName').value;
+      const position = document.getElementById('modalPosition').value;
+      const mp3File = document.getElementById('modalMp3').files[0];
+
+      const songURL = mp3File ? URL.createObjectURL(mp3File) : '';
+      const player = { number, name, position, song: songURL };
+      const roster = document.getElementById(currentTeam + 'Roster');
+      const div = document.createElement('div');
+      div.textContent = `#${number} - ${name} (${position})`;
+      roster.appendChild(div);
+
+      if (currentTeam === 'home') {
+        homeTeam.players.push(player);
+      } else {
+        awayTeam.players.push(player);
+      }
+
+      if (!addAnother) {
+        document.getElementById('playerModal').style.display = 'none';
+      }
+    }
+
+    function startGame() {
+      homeTeam.name = document.getElementById('homeTeamName').value;
+      awayTeam.name = document.getElementById('awayTeamName').value;
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      const team = isHomeBatting ? homeTeam : awayTeam;
+      const player = team.players[team.index % team.players.length];
+      document.getElementById('currentTeamName').textContent = `${team.name} Batting`;
+      document.getElementById('currentBatter').textContent = `#${player.number} - ${player.name}`;
+    }
+
+    function nextBatter() {
+      const team = isHomeBatting ? homeTeam : awayTeam;
+      const player = team.players[team.index % team.players.length];
+
+      if (isHomeBatting && player.song) {
+        const musicAudio = document.getElementById('musicAudio');
+        musicAudio.src = player.song;
+        musicAudio.volume = 0.08;
+        musicAudio.play();
+        setTimeout(() => announcePlayer(player), 5000);
+      } else {
+        announcePlayer(player);
+      }
+
+      team.index++;
+      updateDisplay();
+    }
+
+    function switchInning() {
+      isHomeBatting = !isHomeBatting;
+      updateDisplay();
+    }
 
     function announcePlayer(player) {
       const text = `Now batting, number ${player.number}, ${player.name}, playing ${player.position}`;
@@ -145,23 +255,6 @@
         voiceAudio.volume = 1.0;
         voiceAudio.play();
       });
-    }
-
-    function nextBatter() {
-      const team = isHomeBatting ? homeTeam : awayTeam;
-      const player = team.players[team.index % team.players.length];
-
-      if (isHomeBatting && player.song) {
-        const musicAudio = document.getElementById('musicAudio');
-        musicAudio.src = player.song;
-        musicAudio.volume = 0.08;
-        musicAudio.play();
-        setTimeout(() => announcePlayer(player), 5000);
-      } else {
-        announcePlayer(player);
-      }
-
-      team.index++;
     }
 
     function fadeOutMusic() {
