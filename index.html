@@ -17,114 +17,136 @@
 </head>
 <body>
 
-  <h1>Softball Announcer</h1>
+<h1>Softball Announcer</h1>
 
-  <div id="setup">
-    <div class="team-section">
-      <h2>Home Team Setup</h2>
-      <label>Team Name: <input id="homeTeamName" type="text" /></label><br><br>
-      <div id="homeRoster"></div>
-      <button onclick="addPlayer('home')">+ Add Home Player</button>
-    </div>
-
-    <div class="team-section">
-      <h2>Away Team Setup</h2>
-      <label>Team Name: <input id="awayTeamName" type="text" /></label><br><br>
-      <div id="awayRoster"></div>
-      <button onclick="addPlayer('away')">+ Add Away Player</button>
-    </div>
-
-    <button onclick="startGame()">🎮 Start Game</button>
+<div id="setup">
+  <div class="team-section">
+    <h2>Home Team Setup</h2>
+    <label>Team Name: <input id="homeTeamName" type="text" /></label><br><br>
+    <div id="homeRoster"></div>
+    <button onclick="addPlayer('home')">+ Add Home Player</button>
   </div>
 
-  <div id="game" style="display:none;">
-    <h2 id="currentTeamName"></h2>
-    <h3 id="currentBatter"></h3>
-    <div class="controls">
-      <button onclick="nextBatter()">➡️ Next Batter</button>
-      <button onclick="switchInning()">🔁 Switch Inning</button>
-    </div>
+  <div class="team-section">
+    <h2>Away Team Setup</h2>
+    <label>Team Name: <input id="awayTeamName" type="text" /></label><br><br>
+    <div id="awayRoster"></div>
+    <button onclick="addPlayer('away')">+ Add Away Player</button>
   </div>
 
-  <audio id="audio" src=""></audio>
+  <button onclick="startGame()">🎮 Start Game</button>
+</div>
 
-  <script>
-    const homeTeam = { name: '', players: [], index: 0 };
-    const awayTeam = { name: '', players: [], index: 0 };
-    let isHomeBatting = false;
+<div id="game" style="display:none;">
+  <h2 id="currentTeamName"></h2>
+  <h3 id="currentBatter"></h3>
+  <div class="controls">
+    <button onclick="nextBatter()">➡️ Next Batter</button>
+    <button onclick="switchInning()">🔁 Switch Inning</button>
+  </div>
+</div>
 
-    function addPlayer(team) {
-      const div = document.createElement('div');
-      div.className = 'player-input';
-      div.innerHTML = `
-        <label># <input type="number" class="${team}-number" /></label>
-        <label>Name: <input type="text" class="${team}-name" /></label>
-        ${team === 'home' ? '<label>MP3: <input type="file" accept="audio/mp3" class="' + team + '-mp3" /></label>' : ''}
-      `;
-      document.getElementById(team + 'Roster').appendChild(div);
-    }
+<audio id="audio" src=""></audio>
 
-    function startGame() {
-      homeTeam.name = document.getElementById('homeTeamName').value;
-      awayTeam.name = document.getElementById('awayTeamName').value;
+<script>
+const homeTeam = { name: '', players: [], index: 0 };
+const awayTeam = { name: '', players: [], index: 0 };
+let isHomeBatting = false;
 
-      document.querySelectorAll('.home-number').forEach((el, i) => {
-        const name = document.querySelectorAll('.home-name')[i].value;
-        const mp3File = document.querySelectorAll('.home-mp3')[i].files[0];
-        let songURL = '';
-        if (mp3File) songURL = URL.createObjectURL(mp3File);
-        homeTeam.players.push({ number: el.value, name, song: songURL });
-      });
+function addPlayer(team) {
+  const div = document.createElement('div');
+  div.className = 'player-input';
+  div.innerHTML = `
+    <label># <input type="number" class="${team}-number" /></label>
+    <label>Name: <input type="text" class="${team}-name" /></label>
+    ${team === 'home' ? '<label>MP3: <input type="file" accept="audio/mp3" class="' + team + '-mp3" /></label>' : ''}
+  `;
+  document.getElementById(team + 'Roster').appendChild(div);
+}
 
-      document.querySelectorAll('.away-number').forEach((el, i) => {
-        const name = document.querySelectorAll('.away-name')[i].value;
-        awayTeam.players.push({ number: el.value, name });
-      });
+function startGame() {
+  homeTeam.name = document.getElementById('homeTeamName').value;
+  awayTeam.name = document.getElementById('awayTeamName').value;
 
-      document.getElementById('setup').style.display = 'none';
-      document.getElementById('game').style.display = 'block';
-      updateDisplay();
-    }
+  document.querySelectorAll('.home-number').forEach((el, i) => {
+    const name = document.querySelectorAll('.home-name')[i].value;
+    const mp3File = document.querySelectorAll('.home-mp3')[i].files[0];
+    let songURL = '';
+    if (mp3File) songURL = URL.createObjectURL(mp3File);
+    homeTeam.players.push({ number: el.value, name, song: songURL });
+  });
 
-    function updateDisplay() {
-      const team = isHomeBatting ? homeTeam : awayTeam;
-      const player = team.players[team.index % team.players.length];
-      document.getElementById('currentTeamName').textContent = `${team.name} Batting`;
-      document.getElementById('currentBatter').textContent = `#${player.number} - ${player.name}`;
-    }
+  document.querySelectorAll('.away-number').forEach((el, i) => {
+    const name = document.querySelectorAll('.away-name')[i].value;
+    awayTeam.players.push({ number: el.value, name });
+  });
 
-    function nextBatter() {
-      const team = isHomeBatting ? homeTeam : awayTeam;
-      const player = team.players[team.index % team.players.length];
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  updateDisplay();
+}
 
-      // Play walk-up song if home
-      if (isHomeBatting && player.song) {
-        const audio = document.getElementById('audio');
-        audio.src = player.song;
-        audio.play();
-        setTimeout(() => announce(player), 5000); // wait 5s
-      } else {
-        announce(player);
+function updateDisplay() {
+  const team = isHomeBatting ? homeTeam : awayTeam;
+  const player = team.players[team.index % team.players.length];
+  document.getElementById('currentTeamName').textContent = `${team.name} Batting`;
+  document.getElementById('currentBatter').textContent = `#${player.number} - ${player.name}`;
+}
+
+function nextBatter() {
+  const team = isHomeBatting ? homeTeam : awayTeam;
+  const player = team.players[team.index % team.players.length];
+
+  if (isHomeBatting && player.song) {
+    const audio = document.getElementById('audio');
+    audio.src = player.song;
+    audio.play();
+    setTimeout(() => announce(player), 5000);
+  } else {
+    announce(player);
+  }
+
+  team.index++;
+  updateDisplay();
+}
+
+function switchInning() {
+  isHomeBatting = !isHomeBatting;
+  updateDisplay();
+}
+
+async function announce(player) {
+  const text = `Now batting, number ${player.number}, ${player.name}`;
+  await announceWithElevenLabs(text);
+}
+
+// 🔊 ElevenLabs integration
+async function announceWithElevenLabs(text) {
+  const apiKey = 'sk_61bc5c6b3b95e8161b5b10bf353215199baf9dbd4a90e9a0';  // Replace this
+  const voiceId = 'EXAVITQu4vr4xnSDxMaL'; // Replace if you want a different voice
+
+  const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'audio/mpeg',
+      'Content-Type': 'application/json',
+      'xi-api-key': apiKey
+    },
+    body: JSON.stringify({
+      text: text,
+      model_id: "eleven_monolingual_v1",
+      voice_settings: {
+        stability: 0.6,
+        similarity_boost: 0.75
       }
+    })
+  });
 
-      team.index++;
-      updateDisplay();
-    }
-
-    function announce(player) {
-      const text = `Now batting, number ${player.number}, ${player.name}`;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.pitch = 1;
-      utterance.rate = 1;
-      utterance.volume = 1;
-      speechSynthesis.speak(utterance);
-    }
-
-    function switchInning() {
-      isHomeBatting = !isHomeBatting;
-      updateDisplay();
-    }
-  </script>
-
+  const audioBlob = await response.blob();
+  const audioURL = URL.createObjectURL(audioBlob);
+  const audio = new Audio(audioURL);
+  audio.play();
+}
+</script>
 </body>
 </html>
