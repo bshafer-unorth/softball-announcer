@@ -100,6 +100,7 @@ function nextBatter() {
   if (isHomeBatting && player.song) {
     const audio = document.getElementById('audio');
     audio.src = player.song;
+    audio.volume = 0.35; // 👈 reduce volume so announcement isn't drowned out
     audio.play();
     setTimeout(() => announce(player), 5000);
   } else {
@@ -116,14 +117,13 @@ function switchInning() {
 }
 
 async function announce(player) {
-  const text = `Now batting, number ${player.number}, ${player.name}`;
+  const text = `Now batting... number ${player.number}... ${player.name}!`;
   await announceWithElevenLabs(text);
 }
 
-// 🔊 ElevenLabs integration
 async function announceWithElevenLabs(text) {
-  const apiKey = 'sk_61bc5c6b3b95e8161b5b10bf353215199baf9dbd4a90e9a0';  // Replace this
-  const voiceId = 'EXAVITQu4vr4xnSDxMaL'; // Replace if you want a different voice
+  const apiKey = 'sk_61bc5c6b3b95e8161b5b10bf353215199baf9dbd4a90e9a0';  // 🔒 Insert your ElevenLabs API key
+  const voiceId = '21m00Tcm4TlvDq8ikWAM';  // Rachel's voice
 
   const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
     method: 'POST',
@@ -133,11 +133,11 @@ async function announceWithElevenLabs(text) {
       'xi-api-key': apiKey
     },
     body: JSON.stringify({
-      text: text,
+      text,
       model_id: "eleven_monolingual_v1",
       voice_settings: {
-        stability: 0.6,
-        similarity_boost: 0.75
+        stability: 0.4,         // expressive tone
+        similarity_boost: 0.85  // closer to original voice
       }
     })
   });
@@ -148,5 +148,6 @@ async function announceWithElevenLabs(text) {
   audio.play();
 }
 </script>
+
 </body>
 </html>
