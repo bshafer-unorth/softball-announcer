@@ -186,7 +186,8 @@
     }
 
     async function announce(player) {
-      const text = `Now... batting... number... ${player.number}... ${player.name}...!`;
+      const text = `Now batting, number ${player.number}, ${player.name}.`;
+
       await announceWithElevenLabs(text);
     }
 
